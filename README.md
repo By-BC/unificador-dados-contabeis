@@ -13,3 +13,10 @@ Este projeto faz parte do meu plano de especialização em **Eficiência Contáb
 - [ ] Deploy em Sandbox.
 
 *Acompanhe os commits para ver a evolução deste sistema.*
+
+
+### 🚀 Como rodar o projeto
+1. Clone o repositório
+2. Crie um ambiente virtual: `python -m venv .venv`
+3. Instale as dependências: `pip install -r requirements.txt`
+4. Execute a interface: `streamlit run src/app.py`
