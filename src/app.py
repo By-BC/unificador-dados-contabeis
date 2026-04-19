@@ -85,6 +85,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- INICIALIZAÇÃO DA MEMÓRIA DE APRENDIZADO ---
+if 'regras_custom' not in st.session_state:
+    st.session_state['regras_custom'] = {
+        'IFOOD': 'Refeições e Alimentação',
+        'UBER': 'Transporte / Viagens',
+        'POSTO': 'Combustíveis',
+        'CONDOMINIO': 'Despesas com Imóvel'
+    }
+
 # --- SISTEMA DE SEGURANÇA (GOVERNANÇA DE TI) ---
 def check_password():
     if st.session_state.get("password_correct", False):
@@ -309,9 +318,17 @@ REGRAS_CATEGORIZACAO = {
 
 def categorizar_transacao(historico):
     hist_upper = str(historico).upper()
+    
+    # 1. Primeiro checa as regras que o usuário ensinou na tela
+    for palavra, categoria in st.session_state['regras_custom'].items():
+        if palavra in hist_upper:
+            return categoria
+            
+    # 2. Depois checa as regras fixas do sistema (aquelas que já tínhamos)
     for palavra_chave, categoria in REGRAS_CATEGORIZACAO.items():
         if palavra_chave in hist_upper:
             return categoria
+            
     return 'Não Categorizado (Pendente)'
 
 if arquivos_ofx:
@@ -388,6 +405,56 @@ if arquivos_ofx:
     if tem_transferencias:
         df_transferencias = pd.concat(lista_transferencias).drop(columns=['Valor_Abs'])
 
+    # --- 🧠 INTELIGÊNCIA DE CATEGORIZAÇÃO (IA SUPERVISIONADA) ---
+    with st.expander("🧠 Ensinar Novas Categorias ao Sistema"):
+        st.markdown("<p style='font-size: 13px; color: #888;'>Digite a palavra-chave e a categoria desejada (Ex: IFOOD:Alimentação). Use ponto e vírgula para várias.</p>", unsafe_allow_html=True)
+        
+        regras_input = st.text_area(
+            "Regras Atuais (Palavra:Categoria)", 
+            value="; ".join([f"{k}:{v}" for k, v in st.session_state['regras_custom'].items()]),
+            help="Siga o padrão PALAVRA:CATEGORIA separando por ponto e vírgula."
+        )
+        
+        if st.button("SALVAR E APLICAR INTELIGÊNCIA"):
+            novas_regras = {}
+            for item in regras_input.split(';'):
+                if ':' in item:
+                    k, v = item.split(':')
+                    novas_regras[k.strip().upper()] = v.strip()
+            st.session_state['regras_custom'] = novas_regras
+            st.success("Cérebro atualizado! As categorias serão aplicadas nos próximos processamentos.")
+            st.rerun()
+
+    st.write("---")
+
+    # --- FILTROS DE AUDITORIA (OTIMIZAÇÃO UX) ---
+    st.write("---")
+    with st.expander("🎯 Filtros Rápidos de Pesquisa e Auditoria"):
+        f_col1, f_col2, f_col3 = st.columns(3)
+        with f_col1:
+            bancos_selecionados = st.multiselect("Filtrar por Banco", options=df['Banco'].unique(), default=df['Banco'].unique())
+        with f_col2:
+            cats_selecionadas = st.multiselect("Filtrar por Categoria", options=df['Categoria'].unique(), default=df['Categoria'].unique())
+        with f_col3:
+            tipo_selecionado = st.multiselect("Tipo de Lançamento", options=df['Tipo'].unique(), default=df['Tipo'].unique())
+
+    # Criando o DataFrame filtrado para uso no Dashboard
+    df_filtrado = df[
+        (df['Banco'].isin(bancos_selecionados)) & 
+        (df['Categoria'].isin(cats_selecionadas)) & 
+        (df['Tipo'].isin(tipo_selecionado))
+    ]
+
+    # --- LÓGICA DE NOMEAÇÃO DINÂMICA ---
+    try:
+        # Pega o mês/ano do primeiro lançamento filtrado para nomear o arquivo
+        periodo = pd.to_datetime(df_filtrado['Data']).min().strftime('%m_%Y')
+    except:
+        periodo = "GERAL"
+    
+    nome_sugerido_csv = f"ANALISEGROUP_CONSOLIDADO_{periodo}.csv"
+    nome_sugerido_txt = f"IMPORTACAO_DOMINIO_{periodo}.txt"
+
     # --- 2. AÇÕES RÁPIDAS E EXPORTAÇÃO CONTÁBIL ---
     st.write("### 📥 Ações Rápidas e Integração")
     
@@ -454,7 +521,7 @@ if arquivos_ofx:
 
     # --- 3. PAINEL DE TRIAGEM E AUDITORIA (A PLANILHA FOI MOVIDA PARA CÁ) ---
     st.write("### 🔍 Triagem de Conciliação (Auditoria)")
-    df_tela = df.copy()
+    df_tela = df_filtrado.copy()
     df_tela['Valor'] = df_tela['Valor'].apply(lambda x: f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
     if fila_erp:
@@ -482,7 +549,7 @@ if arquivos_ofx:
     st.write("---")
 
     # --- 4. BLOCO DE KPIs (Resumo Executivo) ---
-    total_credito = df[df['Tipo'] == 'CREDITO']['Valor'].sum()
+    total_credito = df_filtrado[df_filtrado['Tipo'] == 'CREDITO']['Valor'].sum()
     total_debito = abs(df[df['Tipo'] == 'DEBITO']['Valor'].sum())
     saldo_liquido = total_credito - total_debito
     cor_saldo = "#C5A059" if saldo_liquido >= 0 else "#FF4B4B"
@@ -502,7 +569,7 @@ if arquivos_ofx:
 
     with c1:
         st.write("#### 💰 Volume Financeiro Total")
-        df_vol_banco = df.groupby('Banco')['Valor'].apply(lambda x: x.abs().sum()).reset_index()
+        df_vol_banco = df_filtrado.groupby('Banco')['Valor'].apply(lambda x: x.abs().sum()).reset_index()
         df_vol_banco = df_vol_banco.sort_values('Valor', ascending=False)
         fig1 = px.bar(df_vol_banco, x='Banco', y='Valor', text='Valor', color='Banco', color_discrete_sequence=['#C5A059', '#E2BC7A', '#8E794E', '#5C4A26'], template="plotly_dark")
         fig1.update_traces(texttemplate='R$ %{y:,.2f}', textposition='outside', cliponaxis=False)
