@@ -12,7 +12,7 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-000000?style=for-the-badge&logo=python&logoColor=C5A059"></a>
   <a href="https://streamlit.io/"><img src="https://img.shields.io/badge/Streamlit-000000?style=for-the-badge&logo=streamlit&logoColor=C5A059"></a>
   <a href="https://pandas.pydata.org/"><img src="https://img.shields.io/badge/Pandas-000000?style=for-the-badge&logo=pandas&logoColor=C5A059"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Status-Produção-000000?style=for-the-badge&logoColor=C5A059&color=C5A059"></a>
+  <br><a href="#"><img src="https://img.shields.io/badge/Status-Produção-000000?style=for-the-badge&logoColor=C5A059&color=C5A059"></a>
 </div>
 
 ---
