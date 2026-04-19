@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import pandas as pd
 from ofxparse import OfxParser
 import re
@@ -102,6 +102,26 @@ if arquivos:
         fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig2, use_container_width=True)
 
-    # Conversão para download
-    csv = df.to_csv(index=False, sep=';', encoding='utf-8-sig').encode('utf-8-sig')
-    st.download_button("📥 Baixar Planilha Consolidada", data=csv, file_name="analisegroup_consolidado.csv", mime="text/csv")
+    # --- FORMATAÇÃO BRASILEIRA PARA TELA E EXCEL ---
+    st.write("### 🔍 Prévia dos Dados")
+    
+    # 1. Criamos uma cópia apenas para a visualização na tela
+    df_tela = df.copy()
+    
+    # 2. Aplicamos a máscara brasileira (troca ponto por vírgula e vírgula por ponto)
+    # Exemplo: 1234.56 vira 1.234,56
+    df_tela['Valor'] = df_tela['Valor'].apply(lambda x: f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    
+    # Mostra a tabela na interface
+    st.dataframe(df_tela, use_container_width=True)
+
+    # 3. Conversão para download com o parâmetro mágico: decimal=','
+    # Isso garante que o Excel brasileiro entenda a coluna Valor como dinheiro/número nativo
+    csv = df.to_csv(index=False, sep=';', decimal=',', encoding='utf-8-sig').encode('utf-8-sig')
+    
+    st.download_button(
+        label="📥 Baixar Planilha Consolidada", 
+        data=csv, 
+        file_name="analisegroup_consolidado.csv", 
+        mime="text/csv"
+    )
