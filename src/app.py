@@ -300,8 +300,40 @@ if arquivos_ofx:
         st.info("💡 Estas transações anulam umas às outras no Saldo Líquido.")
         st.write("---")
 
-    # --- 6. PRÉVIA DOS DADOS ---
-    st.write("### 🔍 Prévia dos Dados Consolidados")
+    # --- 6. PAINEL DE TRIAGEM E AUDITORIA (PRÉVIA) ---
+    st.write("### 🔍 Triagem de Conciliação (Auditoria)")
+    
     df_tela = df.copy()
+    # Formatação de tela
     df_tela['Valor'] = df_tela['Valor'].apply(lambda x: f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-    st.dataframe(df_tela, use_container_width=True)
+
+    # Se o cliente enviou o arquivo do ERP, mostra o painel avançado
+    if valores_erp:
+        total_banco = len(df)
+        conciliados = len(df[df['Status'] == '✅ Conciliado'])
+        pendentes = len(df[df['Status'] == '❌ Pendente no ERP'])
+        taxa = (conciliados / total_banco) * 100 if total_banco > 0 else 0
+
+        # Resumo do Match
+        st.markdown(f"""
+        <div style='display: flex; justify-content: space-between; background-color: #1A1A1A; padding: 15px; border-radius: 8px; border-left: 5px solid #C5A059; margin-bottom: 20px;'>
+            <div><span style='color: #F0F0F0;'>Lançamentos no Banco:</span> <b style='color: #C5A059; font-size: 18px;'>{total_banco}</b></div>
+            <div><span style='color: #F0F0F0;'>✅ Conciliados (Match):</span> <b style='color: #00CC66; font-size: 18px;'>{conciliados}</b></div>
+            <div><span style='color: #F0F0F0;'>❌ Pendentes:</span> <b style='color: #FF4B4B; font-size: 18px;'>{pendentes}</b></div>
+            <div><span style='color: #F0F0F0;'>🎯 Taxa de Sucesso:</span> <b style='color: #C5A059; font-size: 18px;'>{taxa:.1f}%</b></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Abas de navegação para separar os problemas
+        tab1, tab2, tab3 = st.tabs(["⚠️ Exigem Atenção (Pendentes)", "✅ Tudo Certo (Conciliados)", "📋 Visão Geral (Todos)"])
+        
+        with tab1:
+            st.dataframe(df_tela[df_tela['Status'] == '❌ Pendente no ERP'], use_container_width=True)
+        with tab2:
+            st.dataframe(df_tela[df_tela['Status'] == '✅ Conciliado'], use_container_width=True)
+        with tab3:
+            st.dataframe(df_tela, use_container_width=True)
+            
+    else:
+        # Visão padrão se não enviou o ERP
+        st.dataframe(df_tela, use_container_width=True)
