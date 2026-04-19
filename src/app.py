@@ -5,100 +5,94 @@ from ofxparse import OfxParser
 import io
 import re
 
-# --- CONFIGURAÇÃO DA PÁGINA (ESTÉTICA DE GALA) ---
+# --- CONFIGURAÇÃO DA PÁGINA (CLEAN & PREMIUM) ---
 st.set_page_config(
-    page_title="Analisegroup | BPO Intelligence",
+    page_title="Analisegroup | Financial Intelligence",
     page_icon="💎",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed" # Esconde a sidebar por padrão
 )
 
-# --- INJEÇÃO DE CSS AVANÇADO (DESIGN SYSTEM) ---
+# --- INJEÇÃO DE CSS (ALTA COSTURA DIGITAL) ---
 st.markdown("""
 <style>
-    /* Importando fonte sofisticada */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap');
     
+    /* Fundo e Fonte Geral */
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        background-color: #0E1117;
+        font-family: 'Montserrat', sans-serif;
+        background-color: #000000; /* Preto Absoluto */
+        color: #FFFFFF;
     }
 
-    /* Estilização da Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: #050505;
-        border-right: 1px solid #C5A05933;
+    /* Escondendo Elementos Padrão */
+    [data-testid="stHeader"], [data-testid="stSidebar"], footer {display: none !important;}
+    
+    /* Header de Luxo Centrado */
+    .main-header {
+        text-align: center;
+        padding: 40px 0 20px 0;
+        border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+        margin-bottom: 40px;
+    }
+    
+    .main-header img {
+        width: 220px;
+        margin-bottom: 15px;
     }
 
-    /* Cartões com Efeito Glassmorphism */
-    .stMetric, .css-1r6slb0, .st-emotion-cache-1r6slb0 {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(197, 160, 89, 0.2);
-        border-radius: 12px;
-        padding: 20px;
-        transition: transform 0.3s ease;
+    /* Cartões de KPI com Borda Dourada Fina */
+    div[data-testid="stMetric"] {
+        background: #0A0A0A !important;
+        border: 1px solid #1A1A1A !important;
+        border-bottom: 3px solid #C5A059 !important; /* Detalhe em ouro */
+        border-radius: 4px !important;
+        padding: 15px !important;
     }
 
-    /* Botões Dourados com Brilho */
+    /* Botões com Gradiente Metálico */
     .stButton > button {
-        background: linear-gradient(135deg, #C5A059 0%, #8E794E 100%) !important;
+        width: 100%;
+        background: linear-gradient(145deg, #C5A059, #8E794E) !important;
         color: #000 !important;
-        font-weight: 700 !important;
         border: none !important;
-        border-radius: 8px !important;
-        transition: all 0.3s ease !important;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        border-radius: 2px !important; /* Bordas secas são mais profissionais */
+        font-weight: 600 !important;
+        letter-spacing: 2px !important;
+        padding: 12px !important;
+        transition: 0.4s !important;
     }
     
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(197, 160, 89, 0.4) !important;
+        background: #FFFFFF !important;
+        color: #000 !important;
+        box-shadow: 0 0 20px rgba(197, 160, 89, 0.4);
     }
 
-    /* Tabs (Abas) customizadas */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 24px;
-        background-color: transparent;
+    /* Estilização das Tabelas (Dataframes) */
+    .stDataFrame {
+        border: 1px solid #1A1A1A !important;
+        border-radius: 8px !important;
     }
 
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        background-color: transparent !important;
-        border-bottom: 2px solid transparent !important;
-        color: #F0F0F0 !important;
-        font-weight: 600;
-    }
-
-    .stTabs [aria-selected="true"] {
+    /* Inputs de Senha e Texto */
+    .stTextInput input {
+        background-color: #0A0A0A !important;
         color: #C5A059 !important;
-        border-bottom: 2px solid #C5A059 !important;
+        border: 1px solid #333 !important;
     }
-
-    /* Escondendo lixo da interface Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR DE GOVERNANÇA ---
-with st.sidebar:
-    st.image("assets/logo.png", width=180) # Certifique-se que o caminho está correto
-    st.markdown("---")
-    st.markdown("### 🛠️ Status do Sistema")
-    st.success("Motor de Match: Ativo")
-    st.info("Regras Contábeis: v4.2")
-    
-    st.markdown("---")
-    st.markdown("### 👤 Auditor Responsável")
-    st.write("**Bruno Candido**")
-    st.caption("IT & BPO Specialist")
-    
-    st.markdown("---")
-    if st.button("Limpar Cache / Novo Cliente"):
-        st.cache_data.clear()
-        st.rerun()
+# --- CABEÇALHO DA MARCA ---
+st.markdown(f"""
+    <div class="main-header">
+        <img src="https://raw.githubusercontent.com/bruno-candido/unificador-dados-contabeis/main/assets/logo.png" onerror="this.src='https://via.placeholder.com/220x80/000000/C5A059?text=ANALISEGROUP'">
+        <p style="color: #C5A059; letter-spacing: 5px; font-size: 12px; font-weight: 300; margin-top: -10px;">
+            BPO FINANCEIRO & AUDITORIA DIGITAL
+        </p>
+    </div>
+""", unsafe_allow_html=True)
 
 # --- SISTEMA DE SEGURANÇA (GOVERNANÇA DE TI) ---
 def check_password():
