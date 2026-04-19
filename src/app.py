@@ -222,34 +222,48 @@ if arquivos_ofx:
     col_btn1, col_btn2 = st.columns(2)
     
     with col_btn1:
-        # Download 1: Consolidado Geral
         csv_consolidado = df.to_csv(index=False, sep=';', decimal=',', encoding='utf-8-sig').encode('utf-8-sig')
-        st.download_button(
-            label="📄 Baixar Planilha Consolidada", 
-            data=csv_consolidado, 
-            file_name="analisegroup_consolidado.csv", 
-            mime="text/csv",
-            use_container_width=True # Estica o botão para preencher o espaço
-        )
+        st.download_button(label="📄 Baixar Planilha Consolidada", data=csv_consolidado, file_name="analisegroup_consolidado.csv", mime="text/csv", use_container_width=True)
         
     with col_btn2:
-        # Download 2: Apenas as Transferências (se existirem)
         if tem_transferencias:
             csv_transf = df_transferencias.to_csv(index=False, sep=';', decimal=',', encoding='utf-8-sig').encode('utf-8-sig')
-            st.download_button(
-                label="🔄 Baixar Relatório de Transferências", 
-                data=csv_transf, 
-                file_name="analisegroup_transferencias.csv", 
-                mime="text/csv",
-                use_container_width=True
-            )
+            st.download_button(label="🔄 Baixar Relatório de Transferências", data=csv_transf, file_name="analisegroup_transferencias.csv", mime="text/csv", use_container_width=True)
         else:
-            # Botão inativo caso o sistema não ache nada suspeito
             st.button("✅ Sem transferências internas", disabled=True, use_container_width=True)
 
     st.markdown("---")
 
-    # --- 3. BLOCO DE KPIs (Resumo Executivo) ---
+    # --- 3. PAINEL DE TRIAGEM E AUDITORIA (A PLANILHA FOI MOVIDA PARA CÁ) ---
+    st.write("### 🔍 Triagem de Conciliação (Auditoria)")
+    df_tela = df.copy()
+    df_tela['Valor'] = df_tela['Valor'].apply(lambda x: f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+    if valores_erp:
+        total_banco = len(df)
+        conciliados = len(df[df['Status'] == '✅ Conciliado'])
+        pendentes = len(df[df['Status'] == '❌ Pendente no ERP'])
+        taxa = (conciliados / total_banco) * 100 if total_banco > 0 else 0
+
+        st.markdown(f"""
+        <div style='display: flex; justify-content: space-between; background-color: #1A1A1A; padding: 15px; border-radius: 8px; border-left: 5px solid #C5A059; margin-bottom: 20px;'>
+            <div><span style='color: #F0F0F0;'>Lançamentos no Banco:</span> <b style='color: #C5A059; font-size: 18px;'>{total_banco}</b></div>
+            <div><span style='color: #F0F0F0;'>✅ Conciliados (Match):</span> <b style='color: #00CC66; font-size: 18px;'>{conciliados}</b></div>
+            <div><span style='color: #F0F0F0;'>❌ Pendentes:</span> <b style='color: #FF4B4B; font-size: 18px;'>{pendentes}</b></div>
+            <div><span style='color: #F0F0F0;'>🎯 Taxa de Sucesso:</span> <b style='color: #C5A059; font-size: 18px;'>{taxa:.1f}%</b></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        tab1, tab2, tab3 = st.tabs(["⚠️ Exigem Atenção (Pendentes)", "✅ Tudo Certo (Conciliados)", "📋 Visão Geral (Todos)"])
+        with tab1: st.dataframe(df_tela[df_tela['Status'] == '❌ Pendente no ERP'], use_container_width=True)
+        with tab2: st.dataframe(df_tela[df_tela['Status'] == '✅ Conciliado'], use_container_width=True)
+        with tab3: st.dataframe(df_tela, use_container_width=True)
+    else:
+        st.dataframe(df_tela, use_container_width=True)
+
+    st.write("---")
+
+    # --- 4. BLOCO DE KPIs (Resumo Executivo) ---
     total_credito = df[df['Tipo'] == 'CREDITO']['Valor'].sum()
     total_debito = abs(df[df['Tipo'] == 'DEBITO']['Valor'].sum())
     saldo_liquido = total_credito - total_debito
@@ -258,16 +272,13 @@ if arquivos_ofx:
     st.write("### 💎 Resumo Executivo")
     kpi1, kpi2, kpi3 = st.columns(3)
     
-    with kpi1:
-        st.markdown(f"<div style='border: 1px solid #C5A059; padding: 20px; border-radius: 10px; text-align: center;'> <p style='margin:0; color:#F0F0F0; text-transform:uppercase; font-size:12px; letter-spacing:2px;'>Total Créditos</p> <h2 style='margin:0; color:#C5A059;'>R$ {total_credito:,.2f}</h2> </div>", unsafe_allow_html=True)
-    with kpi2:
-        st.markdown(f"<div style='border: 1px solid #5C4A26; padding: 20px; border-radius: 10px; text-align: center;'> <p style='margin:0; color:#F0F0F0; text-transform:uppercase; font-size:12px; letter-spacing:2px;'>Total Débitos</p> <h2 style='margin:0; color:#F0F0F0;'>R$ {total_debito:,.2f}</h2> </div>", unsafe_allow_html=True)
-    with kpi3:
-        st.markdown(f"<div style='background-color: rgba(197, 160, 89, 0.1); border: 2px solid {cor_saldo}; padding: 20px; border-radius: 10px; text-align: center;'> <p style='margin:0; color:#F0F0F0; text-transform:uppercase; font-size:12px; letter-spacing:2px;'>Saldo Líquido</p> <h2 style='margin:0; color:{cor_saldo};'>R$ {saldo_liquido:,.2f}</h2> </div>", unsafe_allow_html=True)
+    with kpi1: st.markdown(f"<div style='border: 1px solid #C5A059; padding: 20px; border-radius: 10px; text-align: center;'> <p style='margin:0; color:#F0F0F0; text-transform:uppercase; font-size:12px; letter-spacing:2px;'>Total Créditos</p> <h2 style='margin:0; color:#C5A059;'>R$ {total_credito:,.2f}</h2> </div>", unsafe_allow_html=True)
+    with kpi2: st.markdown(f"<div style='border: 1px solid #5C4A26; padding: 20px; border-radius: 10px; text-align: center;'> <p style='margin:0; color:#F0F0F0; text-transform:uppercase; font-size:12px; letter-spacing:2px;'>Total Débitos</p> <h2 style='margin:0; color:#F0F0F0;'>R$ {total_debito:,.2f}</h2> </div>", unsafe_allow_html=True)
+    with kpi3: st.markdown(f"<div style='background-color: rgba(197, 160, 89, 0.1); border: 2px solid {cor_saldo}; padding: 20px; border-radius: 10px; text-align: center;'> <p style='margin:0; color:#F0F0F0; text-transform:uppercase; font-size:12px; letter-spacing:2px;'>Saldo Líquido</p> <h2 style='margin:0; color:{cor_saldo};'>R$ {saldo_liquido:,.2f}</h2> </div>", unsafe_allow_html=True)
 
     st.write("---")
 
-    # --- 4. ANÁLISE DETALHADA POR INSTITUIÇÃO ---
+    # --- 5. ANÁLISE DETALHADA POR INSTITUIÇÃO ---
     st.write("### 🏦 Detalhamento por Banco")
     c1, c2 = st.columns(2)
 
@@ -290,7 +301,7 @@ if arquivos_ofx:
 
     st.write("---")
 
-    # --- 5. AUDITORIA DE TRANSFERÊNCIAS (Interface) ---
+    # --- 6. AUDITORIA DE TRANSFERÊNCIAS (Ficou no final como anexo visual) ---
     if tem_transferencias:
         st.write("### 🔄 Alerta de Transferências Internas")
         st.markdown("<p style='color: #C5A059; font-size: 14px;'><i>Possíveis movimentações entre contas da mesma titularidade.</i></p>", unsafe_allow_html=True)
@@ -298,42 +309,3 @@ if arquivos_ofx:
         df_transferencias_tela['Valor'] = df_transferencias_tela['Valor'].apply(lambda x: f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         st.dataframe(df_transferencias_tela, use_container_width=True)
         st.info("💡 Estas transações anulam umas às outras no Saldo Líquido.")
-        st.write("---")
-
-    # --- 6. PAINEL DE TRIAGEM E AUDITORIA (PRÉVIA) ---
-    st.write("### 🔍 Triagem de Conciliação (Auditoria)")
-    
-    df_tela = df.copy()
-    # Formatação de tela
-    df_tela['Valor'] = df_tela['Valor'].apply(lambda x: f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-
-    # Se o cliente enviou o arquivo do ERP, mostra o painel avançado
-    if valores_erp:
-        total_banco = len(df)
-        conciliados = len(df[df['Status'] == '✅ Conciliado'])
-        pendentes = len(df[df['Status'] == '❌ Pendente no ERP'])
-        taxa = (conciliados / total_banco) * 100 if total_banco > 0 else 0
-
-        # Resumo do Match
-        st.markdown(f"""
-        <div style='display: flex; justify-content: space-between; background-color: #1A1A1A; padding: 15px; border-radius: 8px; border-left: 5px solid #C5A059; margin-bottom: 20px;'>
-            <div><span style='color: #F0F0F0;'>Lançamentos no Banco:</span> <b style='color: #C5A059; font-size: 18px;'>{total_banco}</b></div>
-            <div><span style='color: #F0F0F0;'>✅ Conciliados (Match):</span> <b style='color: #00CC66; font-size: 18px;'>{conciliados}</b></div>
-            <div><span style='color: #F0F0F0;'>❌ Pendentes:</span> <b style='color: #FF4B4B; font-size: 18px;'>{pendentes}</b></div>
-            <div><span style='color: #F0F0F0;'>🎯 Taxa de Sucesso:</span> <b style='color: #C5A059; font-size: 18px;'>{taxa:.1f}%</b></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Abas de navegação para separar os problemas
-        tab1, tab2, tab3 = st.tabs(["⚠️ Exigem Atenção (Pendentes)", "✅ Tudo Certo (Conciliados)", "📋 Visão Geral (Todos)"])
-        
-        with tab1:
-            st.dataframe(df_tela[df_tela['Status'] == '❌ Pendente no ERP'], use_container_width=True)
-        with tab2:
-            st.dataframe(df_tela[df_tela['Status'] == '✅ Conciliado'], use_container_width=True)
-        with tab3:
-            st.dataframe(df_tela, use_container_width=True)
-            
-    else:
-        # Visão padrão se não enviou o ERP
-        st.dataframe(df_tela, use_container_width=True)
